@@ -216,7 +216,11 @@ shaHash(const DEVADDR uint32_t* data, size_t size, size_t stride = 1, bool pad =
 
 DEVSPEC inline ShaDigest
 shaHash(const DEVADDR Fp* data, size_t size, size_t stride = 1, bool pad = true) {
+#if GOLDILOCKS
+  return impl::shaHashInner(reinterpret_cast<const uint32_t*>(data), size * 2, stride, pad);
+#else
   return impl::shaHashInner(data, size, stride, pad);
+#endif
 }
 
 DEVSPEC inline ShaDigest shaHashPair(ShaDigest x, ShaDigest y) {

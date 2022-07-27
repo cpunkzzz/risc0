@@ -66,7 +66,11 @@ std::string GenContext::funcDone() {
 }
 
 Context::ValPtr GenContext::constant(Fp val, SourceLoc loc) {
+#ifdef GOLDILOCKS
+  defl() << val << "ull" << endl(loc);
+#else
   defl() << val << endl(loc);
+#endif
   return newDef();
 }
 

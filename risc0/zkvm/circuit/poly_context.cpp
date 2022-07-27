@@ -318,7 +318,11 @@ struct PolyContext::Impl {
 };
 
 std::string OpConstant::output(PolyContext::Impl& impl, const std::string& out) {
+#if GOLDILOCKS
+  return "do_const(" + out + ", " + value.str() + "ull)";
+#else
   return "do_const(" + out + ", " + value.str() + ")";
+#endif
 }
 
 void OpConstant::findCriticalPath(PolyContext::Impl& impl) {}

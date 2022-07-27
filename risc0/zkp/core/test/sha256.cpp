@@ -67,6 +67,7 @@ TEST(Sha256, TestVectors) {
             "f75c763b4a52709ac294fc7bd7cf14dd45718c3d50b36f4732b05b8c6017492a");
 }
 
+#if !GOLDILOCKS
 TEST(Sha256, compareFpVsBytes) {
   // Try sizes 0 - 100 for variety
   PsuedoRng rng(2);

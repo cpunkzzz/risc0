@@ -20,12 +20,146 @@
 #include "risc0/zkp/core/devs.h"
 #include <limits>
 
+// Pick which field to use
+#define GOLDILOCKS 0
+
 // Determine whether to use montgomery representation or direct representation.  Currently
 // montgomry seems faster in most cases, might want to revisit with more testing
 #define DIRECT 0
 
 namespace risc0 {
 
+#if GOLDILOCKS
+
+typedef __uint128_t uint128_t;
+
+class Fp {
+public:
+  /// The value of P, the modulus of Fp.
+  static constexpr uint64_t P = - (uint64_t(1) << 32) + 1;
+
+private:
+  // The actual value, always < P.
+  uint64_t val;
+
+  // Add two numbers
+  static constexpr uint64_t add(uint64_t a, uint64_t b) {
+    uint64_t r = a + b;
+    if (r < a || r >= P) { r -= P; }
+    return r;
+  }
+
+  // Subtract two numbers
+  static constexpr uint64_t sub(uint64_t a, uint64_t b) {
+    uint64_t r = a - b;
+    if (r > a) { r += P; }
+    return r;
+  }
+
+  // Multiply two numbers
+  static constexpr uint64_t mul(uint64_t a, uint64_t b) {
+    uint128_t prod = uint128_t(a) * uint128_t(b);
+
+    // Initialize result to low 64 bits
+    uint64_t ret = uint64_t(prod);
+    // Get two high words
+    uint32_t med = uint32_t(prod >> 64);
+    uint32_t high = uint32_t(prod >> 96);
+    // Subtract out high bits, add in P if underflow
+    if (ret >= high) { 
+      ret -= high; 
+    } else {
+      ret -= high;
+      ret += P;
+    }
+    // Compute shifted effect of medium
+    uint64_t med_shift = (uint64_t(med) << 32) - med;
+    // Add in, if overflow, subtract a P
+    ret += med_shift;
+    if (ret < med_shift || ret >= P) ret -= P;
+    return uint64_t(ret);
+  }
+
+public:
+  /// Default constructor, sets value to 0.
+  constexpr Fp() : val(0) {}
+  /// Construct an FP from a uint64_t
+  constexpr Fp(uint64_t val) : val(val) {}
+
+  /// Convert to a unit64_t
+  constexpr uint64_t asUInt64() const { return val; }
+  // Cut off low 32 bits
+  constexpr uint32_t asUInt32() const { return uint32_t(val); }
+  /// Get the largest value, basically P - 1.
+  static constexpr Fp maxVal() { return P - 1; }
+  /// Get an 'invalid' Fp value
+  static constexpr Fp invalid() { return Fp(0xffffffffffffffffull); }
+  /// Generate a uniform random value.
+  template <typename Rng> static Fp random(Rng& rng) {
+    uint64_t val;
+    do {
+      val = uint64_t(rng.generate()) << 32 | uint64_t(rng.generate());
+    } while (val >= P);
+    return Fp(val);
+  }
+
+  // Implement all the various overloads
+  constexpr Fp operator+(Fp rhs) const { return Fp(add(val, rhs.val)); }
+  constexpr Fp operator-() const { return Fp(sub(0, val)); }
+  constexpr Fp operator-(Fp rhs) const { return Fp(sub(val, rhs.val)); }
+  constexpr Fp operator*(Fp rhs) const { return Fp(mul(val, rhs.val)); }
+
+  constexpr Fp operator+=(Fp rhs) {
+    val = add(val, rhs.val);
+    return *this;
+  }
+  constexpr Fp operator-=(Fp rhs) {
+    val = sub(val, rhs.val);
+    return *this;
+  }
+  constexpr Fp operator*=(Fp rhs) {
+    val = mul(val, rhs.val);
+    return *this;
+  }
+  constexpr bool operator==(Fp rhs) const { return val == rhs.val; }
+  constexpr bool operator!=(Fp rhs) const { return val != rhs.val; }
+  constexpr bool operator<(Fp rhs) const { return val < rhs.val; }
+  constexpr bool operator<=(Fp rhs) const { return val <= rhs.val; }
+  constexpr bool operator>(Fp rhs) const { return val > rhs.val; }
+  constexpr bool operator>=(Fp rhs) const { return val >= rhs.val; }
+
+  // Post-inc/dec
+  DEVSPEC constexpr Fp operator++(int) {
+    Fp r = *this;
+    val = add(val, 1);
+    return r;
+  }
+  DEVSPEC constexpr Fp operator--(int) {
+    Fp r = *this;
+    val = sub(val, 1);
+    return r;
+  }
+
+  // Pre-inc/dec
+  DEVSPEC constexpr Fp operator++() {
+    val = add(val, 1);
+    return *this;
+  }
+  DEVSPEC constexpr Fp operator--() {
+    val = sub(val, 1);
+    return *this;
+  }
+
+  std::string str() { return std::to_string(val); }
+};
+
+/// ostream support for Fp values, only for CPU
+inline std::ostream& operator<<(std::ostream& os, const Fp& x) {
+  os << x.asUInt64();
+  return os;
+}
+
+#else
 /// The Fp class is an element of the finite field F_p, where P is the prime number 15*2^27 + 1.
 /// Put another way, Fp is basically integer arithmetic modulo P.
 ///
@@ -204,8 +338,10 @@ inline std::ostream& operator<<(std::ostream& os, const Fp& x) {
 }
 #endif
 
+#endif // GOLDILOCKS
+
 /// Raise an value to a power
-DEVSPEC constexpr inline Fp pow(Fp x, size_t n) {
+DEVSPEC constexpr inline Fp pow(Fp x, uint64_t n) {
   Fp tot = 1;
   while (n != 0) {
     if (n % 2 == 1) {
