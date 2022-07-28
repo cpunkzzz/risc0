@@ -21,7 +21,7 @@
 #include <limits>
 
 // Pick which field to use
-#define GOLDILOCKS 0
+#define GOLDILOCKS 1
 
 // Determine whether to use montgomery representation or direct representation.  Currently
 // montgomry seems faster in most cases, might want to revisit with more testing
