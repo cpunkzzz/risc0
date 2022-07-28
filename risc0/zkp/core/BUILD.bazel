@@ -13,6 +13,7 @@ cc_library(
         "fp.h",
         "fp2.h",
         "fp4.h",
+        "fpext.h",
         "ntt.h",
         "poly.h",
         "rou.h",
