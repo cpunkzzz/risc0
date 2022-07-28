@@ -87,5 +87,6 @@ TEST(Sha256, compareFpVsBytes) {
     ASSERT_EQ(shaHash(vals.data(), vals.size()), shaHash(vstr));
   }
 }
+#endif
 
 } // End namespace risc0

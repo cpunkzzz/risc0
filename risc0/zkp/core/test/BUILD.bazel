@@ -4,6 +4,7 @@ cc_gtest(
     name = "test",
     srcs = [
         "fp.cpp",
+        "fp2.cpp",
         "fp4.cpp",
         "ntt.cpp",
         "sha256.cpp",
