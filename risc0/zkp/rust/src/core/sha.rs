@@ -77,6 +77,15 @@ impl Digest {
         &self.0
     }
 
+    /// Returns as a slice of be u8
+    pub fn get_u8(&self) -> [u8; DIGEST_WORDS * 4] {
+        let mut res: [u8; DIGEST_WORDS * 4] = [0; DIGEST_WORDS * 4];
+        for i in 0..DIGEST_WORDS {
+            res[4 * i..][..4].copy_from_slice(&self.0[i].to_be_bytes());
+        }
+        res
+    }
+
     /// Returns a mutable slice of words.
     pub fn get_mut(&mut self) -> &mut [u32; DIGEST_WORDS] {
         &mut self.0

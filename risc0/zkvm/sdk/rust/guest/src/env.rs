@@ -17,7 +17,10 @@ use core::{cell::UnsafeCell, mem::MaybeUninit, slice};
 use risc0_zkp::core::sha::Digest;
 use risc0_zkvm::{
     platform::{
-        io::{IoDescriptor, GPIO_COMMIT, SENDRECV_CHANNEL_INITIAL_INPUT, SENDRECV_CHANNEL_STDOUT},
+        io::{
+            IoDescriptor, GPIO_COMMIT, SENDRECV_CHANNEL_INITIAL_AUX_INPUT,
+            SENDRECV_CHANNEL_INITIAL_INPUT, SENDRECV_CHANNEL_STDOUT,
+        },
         memory, WORD_SIZE,
     },
     serde::{Deserializer, Serializer, Slice},
@@ -98,6 +101,11 @@ pub fn read<T: Deserialize<'static>>() -> T {
     ENV.get().read()
 }
 
+/// Read private raw data from the host.
+pub fn read_aux_input() -> &'static [u8] {
+    ENV.get().read_aux_input()
+}
+
 /// Write private data to the host.
 pub fn write<T: Serialize>(data: &T) {
     ENV.get().write(data);
@@ -138,6 +146,10 @@ impl Env {
             self.initial_input_reader = Some(Reader(Deserializer::new(words)))
         }
         self.initial_input_reader.as_mut().unwrap()
+    }
+
+    pub fn read_aux_input(&mut self) -> &[u8] {
+        self.send_recv(SENDRECV_CHANNEL_INITIAL_AUX_INPUT, &[])
     }
 
     pub fn read<T: Deserialize<'static>>(&mut self) -> T {
