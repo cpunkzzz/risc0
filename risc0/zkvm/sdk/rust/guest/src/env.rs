@@ -18,7 +18,7 @@ use risc0_zkp::core::sha::Digest;
 use risc0_zkvm::{
     platform::{
         io::{
-            IoDescriptor, GPIO_COMMIT, SENDRECV_CHANNEL_INITIAL_AUX_INPUT,
+            IoDescriptor, GPIO_COMMIT, GPIO_LOG, SENDRECV_CHANNEL_INITIAL_AUX_INPUT,
             SENDRECV_CHANNEL_INITIAL_INPUT, SENDRECV_CHANNEL_STDOUT,
         },
         memory, WORD_SIZE,
@@ -114,6 +114,15 @@ pub fn write<T: Serialize>(data: &T) {
 /// Commit public data to the journal.
 pub fn commit<T: Serialize>(data: &T) {
     ENV.get().commit(data);
+}
+
+/// Print a message to the debug console.
+pub fn log(msg: &str) {
+    // TODO: format! is expensive, replace with a better solution.
+    let msg = alloc_crate::format!("{}\0", msg);
+    let ptr = msg.as_ptr();
+    memory_barrier(ptr);
+    unsafe { GPIO_LOG.as_ptr().write_volatile(ptr) };
 }
 
 impl Env {

@@ -21,6 +21,7 @@
 #![cfg_attr(target_arch = "riscv32", feature(new_uninit))]
 
 extern crate alloc as _alloc;
+pub extern crate alloc as alloc_crate;
 
 #[cfg(not(feature = "std"))]
 mod alloc;
