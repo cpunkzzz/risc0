@@ -65,3 +65,4 @@ pub const SHA: Region = Region::new(0x02A0_0000, mb(1));
 pub const WOM: Region = Region::new(0x02B0_0000, mb(21));
 pub const OUTPUT: Region = Region::new(0x02B0_0000, mb(20));
 pub const COMMIT: Region = Region::new(0x03F0_0000, mb(1));
+pub const MUL: Region = Region::new(0x0400_0000, mb(1));

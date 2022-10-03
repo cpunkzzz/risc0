@@ -30,6 +30,7 @@ MEMORY {
   prog    (X)  : ORIGIN = 0x02000000, LENGTH =  10M
   sha          : ORIGIN = 0x02A00000, LENGTH =   1M
   wom          : ORIGIN = 0x02B00000, LENGTH =  21M
+  mul          : ORIGIN = 0x04000000, LENGTH =   1M
 }
 
 SECTIONS {

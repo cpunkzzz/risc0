@@ -46,6 +46,7 @@ MEM_REGION(SHA,    0x02A00000, k1MB)
 MEM_REGION(WOM,    0x02B00000, 21 * k1MB)
 MEM_REGION(Output, 0x02B00000, 20 * k1MB)
 MEM_REGION(Commit, 0x03F00000, k1MB)
+MEM_REGION(MUL, 0x04000000, k1MB)
 // clang-format on
 
 #define PTR_TO(type, name) reinterpret_cast<type*>(kMem##name##Start);

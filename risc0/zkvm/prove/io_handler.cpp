@@ -46,6 +46,39 @@ static void processSHA(MemoryState& mem, const ShaDescriptor& desc) {
   }
 }
 
+static void processMul(MemoryState& mem, const MulDescriptor& desc) {
+  uint32_t first_operand[2];
+  uint32_t second_operand[2];
+
+  first_operand[0] = mem.loadBE(desc.source);
+  LOG(1, "Input[" << hex(0, 2) << "]: " << hex(desc.source) << " -> " << hex(first_operand[0]));
+  first_operand[1] = mem.loadBE(desc.source + 4);
+  LOG(1, "Input[" << hex(1, 2) << "]: " << hex(desc.source + 4) << " -> " << hex(first_operand[1]));
+  second_operand[0] = mem.loadBE(desc.source + 8);
+  LOG(1,
+      "Input[" << hex(2, 2) << "]: " << hex(desc.source + 8) << " -> " << hex(second_operand[0]));
+  second_operand[1] = mem.loadBE(desc.source + 12);
+  LOG(1,
+      "Input[" << hex(3, 2) << "]: " << hex(desc.source + 12) << " -> " << hex(second_operand[1]));
+
+  // MSB is at 0
+  uint64_t first = first_operand[1] | (uint64_t(first_operand[0]) << 32);
+  uint64_t second = second_operand[1] | (uint64_t(second_operand[0]) << 32);
+
+  __uint128_t result = __uint128_t(first) * __uint128_t(second);
+
+  // goldilocks
+  uint64_t moded_result = result % 0xFFFFFFFF00000001;
+
+  uint32_t high = (uint32_t)((moded_result & 0xFFFFFFFF00000000LL) >> 32);
+  uint32_t low = (uint32_t)(moded_result & 0xFFFFFFFFLL);
+
+  LOG(1, "Output[" << hex(0, 2) << "]: " << hex(desc.result) << " <- " << hex(high));
+  mem.store(desc.result, high);
+  LOG(1, "Output[" << hex(1, 2) << "]: " << hex(desc.result + 4) << " <- " << hex(low));
+  mem.store(desc.result + 4, low);
+}
+
 void IoHandler::onFault(const std::string& msg) {
   throw std::runtime_error(msg);
 }
@@ -63,6 +96,13 @@ void MemoryHandler::onInit(MemoryState& mem) {
 void MemoryHandler::onWrite(MemoryState& mem, uint32_t cycle, uint32_t addr, uint32_t value) {
   LOG(2, "MemoryHandler::onWrite> " << hex(addr) << ": " << hex(value));
   switch (addr) {
+  case kGPIO_Mul: {
+    LOG(1, "MemoryHandler::onWrite> GPIO_MUL");
+    MulDescriptor desc;
+    mem.loadRegion(value, &desc, sizeof(desc));
+    processMul(mem, desc);
+    break;
+  }
   case kGPIO_SHA: {
     LOG(1, "MemoryHandler::onWrite> GPIO_SHA");
     ShaDescriptor desc;
