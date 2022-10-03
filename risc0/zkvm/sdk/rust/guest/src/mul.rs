@@ -1,7 +1,10 @@
 use core::{cell::UnsafeCell, mem};
 
 use _alloc::{boxed::Box, vec::Vec};
-use risc0_zkvm::platform::{io::{MulDescriptor, GPIO_MUL}, memory};
+use risc0_zkvm::platform::{
+    io::{MulDescriptor, GPIO_MUL},
+    memory,
+};
 
 // Current sha descriptor index.
 struct CurOutput(UnsafeCell<usize>);
@@ -11,7 +14,19 @@ unsafe impl Sync for CurOutput {}
 
 static CUR_OUTPUT: CurOutput = CurOutput(UnsafeCell::new(0));
 
+/// Result of multiply goldilocks
 pub struct MulGoldilocks([u32; 2]);
+
+impl MulGoldilocks {
+    /// Get the result as u64
+    pub fn get_u64(&self) -> u64 {
+        let mut res = 0u64;
+        for i in 0..2 {
+            res |= (self.0[i] as u64) << (32 * i);
+        }
+        res
+    }
+}
 
 fn alloc_output() -> *mut MulDescriptor {
     // SAFETY: Single threaded and this is the only place we use CUR_DESC.
@@ -23,15 +38,16 @@ fn alloc_output() -> *mut MulDescriptor {
     }
 }
 
+/// Multiply goldilocks oracle, verification is done separately
 pub fn mul_goldilocks(a: &u64, b: &u64) -> &'static MulGoldilocks {
     // Allocate fresh memory that's guaranteed to be uninitialized so
     // the host can write to it.
     let mut buf = Vec::<u32>::with_capacity(4);
-    let a_hi = (u32)((a & 0xFFFFFFFF00000000LL) >> 32);
-    let a_lo = (u32)(a & 0xFFFFFFFFLL);
+    let a_hi = ((a & 0xFFFFFFFF00000000) >> 32) as u32;
+    let a_lo = (a & 0xFFFFFFFF) as u32;
 
-    let b_hi = (u32)((b & 0xFFFFFFFF00000000LL) >> 32);
-    let b_lo = (u32)(b & 0xFFFFFFFFLL);
+    let b_hi = ((b & 0xFFFFFFFF00000000) >> 32) as u32;
+    let b_lo = (b & 0xFFFFFFFF) as u32;
 
     buf.push(a_hi);
     buf.push(a_lo);
