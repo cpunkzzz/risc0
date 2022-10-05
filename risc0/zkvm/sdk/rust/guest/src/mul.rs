@@ -1,5 +1,7 @@
 use core::{cell::UnsafeCell, mem};
 
+use crate::env::log;
+use _alloc::format;
 use _alloc::{boxed::Box, vec::Vec};
 use risc0_zkvm::platform::{
     io::{MulDescriptor, GPIO_MUL},
@@ -20,11 +22,7 @@ pub struct MulGoldilocks([u32; 2]);
 impl MulGoldilocks {
     /// Get the result as u64
     pub fn get_u64(&self) -> u64 {
-        let mut res = 0u64;
-        for i in 0..2 {
-            res |= (self.0[i] as u64) << (32 * i);
-        }
-        res
+        (self.0[1] as u64) | ((self.0[0] as u64) << 32)
     }
 }
 

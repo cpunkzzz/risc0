@@ -47,23 +47,17 @@ static void processSHA(MemoryState& mem, const ShaDescriptor& desc) {
 }
 
 static void processMul(MemoryState& mem, const MulDescriptor& desc) {
-  uint32_t first_operand[2];
-  uint32_t second_operand[2];
+  uint32_t a_hi = mem.load(desc.source);
+  LOG(1, "Input[" << hex(0, 2) << "]: " << hex(desc.source) << " -> " << hex(a_hi));
+  uint32_t a_lo = mem.load(desc.source + 4);
+  LOG(1, "Input[" << hex(1, 2) << "]: " << hex(desc.source + 4) << " -> " << hex(a_lo));
+  uint32_t b_hi = mem.load(desc.source + 8);
+  LOG(1, "Input[" << hex(2, 2) << "]: " << hex(desc.source + 8) << " -> " << hex(b_hi));
+  uint32_t b_lo = mem.load(desc.source + 12);
+  LOG(1, "Input[" << hex(3, 2) << "]: " << hex(desc.source + 12) << " -> " << hex(b_lo));
 
-  first_operand[0] = mem.loadBE(desc.source);
-  LOG(1, "Input[" << hex(0, 2) << "]: " << hex(desc.source) << " -> " << hex(first_operand[0]));
-  first_operand[1] = mem.loadBE(desc.source + 4);
-  LOG(1, "Input[" << hex(1, 2) << "]: " << hex(desc.source + 4) << " -> " << hex(first_operand[1]));
-  second_operand[0] = mem.loadBE(desc.source + 8);
-  LOG(1,
-      "Input[" << hex(2, 2) << "]: " << hex(desc.source + 8) << " -> " << hex(second_operand[0]));
-  second_operand[1] = mem.loadBE(desc.source + 12);
-  LOG(1,
-      "Input[" << hex(3, 2) << "]: " << hex(desc.source + 12) << " -> " << hex(second_operand[1]));
-
-  // MSB is at 0
-  uint64_t first = first_operand[1] | (uint64_t(first_operand[0]) << 32);
-  uint64_t second = second_operand[1] | (uint64_t(second_operand[0]) << 32);
+  uint64_t first = a_lo | (uint64_t(a_hi) << 32);
+  uint64_t second = b_lo | (uint64_t(b_hi) << 32);
 
   __uint128_t result = __uint128_t(first) * __uint128_t(second);
 
