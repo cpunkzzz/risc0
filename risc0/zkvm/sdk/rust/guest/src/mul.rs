@@ -38,19 +38,13 @@ fn alloc_output() -> *mut MulDescriptor {
 
 /// Multiply goldilocks oracle, verification is done separately
 pub fn mul_goldilocks(a: &u64, b: &u64) -> &'static MulGoldilocks {
-    // Allocate fresh memory that's guaranteed to be uninitialized so
-    // the host can write to it.
-    let mut buf = Vec::<u32>::with_capacity(4);
     let a_hi = ((a & 0xFFFFFFFF00000000) >> 32) as u32;
     let a_lo = (a & 0xFFFFFFFF) as u32;
 
     let b_hi = ((b & 0xFFFFFFFF00000000) >> 32) as u32;
     let b_lo = (b & 0xFFFFFFFF) as u32;
 
-    buf.push(a_hi);
-    buf.push(a_lo);
-    buf.push(b_hi);
-    buf.push(b_lo);
+    let buf = [a_hi, a_lo, b_hi, b_lo];
 
     unsafe {
         let alloced = Box::<mem::MaybeUninit<MulGoldilocks>>::new(
