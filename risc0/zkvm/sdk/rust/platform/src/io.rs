@@ -49,6 +49,8 @@ pub const GPIO_SENDRECV_CHANNEL: Gpio<u32> = Gpio::new(0x01F0_0014);
 pub const GPIO_SENDRECV_SIZE: Gpio<usize> = Gpio::new(0x01F0_0018);
 pub const GPIO_SENDRECV_ADDR: Gpio<*const u8> = Gpio::new(0x01F0_001C);
 
+pub const GPIO_MUL: Gpio<*const MulDescriptor> = Gpio::new(0x01F0_0020);
+
 pub mod addr {
     pub const GPIO_SHA: u32 = super::GPIO_SHA.addr();
     pub const GPIO_COMMIT: u32 = super::GPIO_COMMIT.addr();
@@ -59,6 +61,8 @@ pub mod addr {
     pub const GPIO_SENDRECV_CHANNEL: u32 = super::GPIO_SENDRECV_CHANNEL.addr();
     pub const GPIO_SENDRECV_SIZE: u32 = super::GPIO_SENDRECV_SIZE.addr();
     pub const GPIO_SENDRECV_ADDR: u32 = super::GPIO_SENDRECV_ADDR.addr();
+
+    pub const GPIO_MUL: u32 = super::GPIO_MUL.addr();
 }
 
 #[repr(C)]
@@ -73,6 +77,12 @@ pub struct SHADescriptor {
     pub idx: usize,
     pub source: usize,
     pub digest: usize,
+}
+
+#[repr(C)]
+pub struct MulDescriptor {
+    pub source: usize,
+    pub result: usize,
 }
 
 #[repr(C)]

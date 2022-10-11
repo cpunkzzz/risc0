@@ -26,6 +26,7 @@ constexpr size_t kGPIO_GetKey = 0x01F0010;
 constexpr size_t kGPIO_SendRecvChannel = 0x01F00014;
 constexpr size_t kGPIO_SendRecvSize = 0x01F00018;
 constexpr size_t kGPIO_SendRecvAddr = 0x01F0001C;
+constexpr size_t kGPIO_Mul = 0x01F00020;
 
 // Standard ZKVM channels; must match zkvm/sdk/rust/platform/src/io.rs.
 
@@ -65,6 +66,15 @@ struct ShaDescriptor {
   // Output address to write SHA digest to; this memory must be uninitialized, and must not be
   // modified afterwards.
   uint32_t digest;
+};
+
+struct MulDescriptor {
+  // Address of first byte of MUL data to process
+  // 64 bits for first operand and 64 bits for second
+  uint32_t source;
+
+  // 64 bit result
+  uint32_t result;
 };
 
 inline volatile ShaDescriptor* volatile* GPIO_SHA() {

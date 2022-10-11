@@ -46,6 +46,33 @@ static void processSHA(MemoryState& mem, const ShaDescriptor& desc) {
   }
 }
 
+static void processMul(MemoryState& mem, const MulDescriptor& desc) {
+  uint32_t a_hi = mem.load(desc.source);
+  LOG(1, "Input[" << hex(0, 2) << "]: " << hex(desc.source) << " -> " << hex(a_hi));
+  uint32_t a_lo = mem.load(desc.source + 4);
+  LOG(1, "Input[" << hex(1, 2) << "]: " << hex(desc.source + 4) << " -> " << hex(a_lo));
+  uint32_t b_hi = mem.load(desc.source + 8);
+  LOG(1, "Input[" << hex(2, 2) << "]: " << hex(desc.source + 8) << " -> " << hex(b_hi));
+  uint32_t b_lo = mem.load(desc.source + 12);
+  LOG(1, "Input[" << hex(3, 2) << "]: " << hex(desc.source + 12) << " -> " << hex(b_lo));
+
+  uint64_t first = a_lo | (uint64_t(a_hi) << 32);
+  uint64_t second = b_lo | (uint64_t(b_hi) << 32);
+
+  __uint128_t result = __uint128_t(first) * __uint128_t(second);
+
+  // goldilocks
+  uint64_t moded_result = result % 0xFFFFFFFF00000001;
+
+  uint32_t high = (uint32_t)((moded_result & 0xFFFFFFFF00000000LL) >> 32);
+  uint32_t low = (uint32_t)(moded_result & 0xFFFFFFFFLL);
+
+  LOG(1, "Output[" << hex(0, 2) << "]: " << hex(desc.result) << " <- " << hex(high));
+  mem.store(desc.result, high);
+  LOG(1, "Output[" << hex(1, 2) << "]: " << hex(desc.result + 4) << " <- " << hex(low));
+  mem.store(desc.result + 4, low);
+}
+
 void IoHandler::onFault(const std::string& msg) {
   throw std::runtime_error(msg);
 }
@@ -63,6 +90,13 @@ void MemoryHandler::onInit(MemoryState& mem) {
 void MemoryHandler::onWrite(MemoryState& mem, uint32_t cycle, uint32_t addr, uint32_t value) {
   LOG(2, "MemoryHandler::onWrite> " << hex(addr) << ": " << hex(value));
   switch (addr) {
+  case kGPIO_Mul: {
+    LOG(1, "MemoryHandler::onWrite> GPIO_MUL");
+    MulDescriptor desc;
+    mem.loadRegion(value, &desc, sizeof(desc));
+    processMul(mem, desc);
+    break;
+  }
   case kGPIO_SHA: {
     LOG(1, "MemoryHandler::onWrite> GPIO_SHA");
     ShaDescriptor desc;

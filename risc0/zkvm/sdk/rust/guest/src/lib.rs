@@ -32,6 +32,9 @@ pub mod env;
 /// Functions for computing SHA-256 hashes.
 pub mod sha;
 
+/// mul
+pub mod mul;
+
 /// Functions for handling input and output
 pub mod io;
 
