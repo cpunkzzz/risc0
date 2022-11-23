@@ -46,6 +46,18 @@ static void processSHA(MemoryState& mem, const ShaDescriptor& desc) {
   }
 }
 
+static uint64_t montRedCst(__uint128_t n) {
+  uint64_t xl = n & 0xFFFFFFFF;
+  uint64_t xh = (n >> 64) & 0xFFFFFFFF;
+  bool e = (__uint128_t(xl) + __uint128_t(xl << 32)) > UINT64_MAX;
+  uint64_t a = xl + (xl << 32);
+  uint64_t b = a - (a >> 32) - e;
+  bool c = (int64_t(xh) - int64_t(b)) < 0;
+  uint64_t r = xh - b;
+  uint64_t mont_result = r - (uint32_t(0) - uint32_t(c));
+  return mont_result;
+}
+
 static void processMul(MemoryState& mem, const MulDescriptor& desc) {
   uint32_t a_hi = mem.load(desc.source);
   LOG(1, "Input[" << hex(0, 2) << "]: " << hex(desc.source) << " -> " << hex(a_hi));
@@ -60,12 +72,10 @@ static void processMul(MemoryState& mem, const MulDescriptor& desc) {
   uint64_t second = b_lo | (uint64_t(b_hi) << 32);
 
   __uint128_t result = __uint128_t(first) * __uint128_t(second);
+  uint64_t mont_result = montRedCst(result);
 
-  // goldilocks
-  uint64_t moded_result = result % 0xFFFFFFFF00000001;
-
-  uint32_t high = (uint32_t)((moded_result & 0xFFFFFFFF00000000LL) >> 32);
-  uint32_t low = (uint32_t)(moded_result & 0xFFFFFFFFLL);
+  uint32_t high = (uint32_t)((mont_result & 0xFFFFFFFF00000000LL) >> 32);
+  uint32_t low = (uint32_t)(mont_result & 0xFFFFFFFFLL);
 
   LOG(1, "Output[" << hex(0, 2) << "]: " << hex(desc.result) << " <- " << hex(high));
   mem.store(desc.result, high);
