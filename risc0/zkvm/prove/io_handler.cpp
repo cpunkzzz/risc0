@@ -47,14 +47,17 @@ static void processSHA(MemoryState& mem, const ShaDescriptor& desc) {
 }
 
 static uint64_t montRedCst(__uint128_t n) {
-  uint64_t xl = n & 0xFFFFFFFF;
-  uint64_t xh = (n >> 64) & 0xFFFFFFFF;
-  bool e = (__uint128_t(xl) + __uint128_t(xl << 32)) > UINT64_MAX;
+  uint64_t xl = uint64_t(n);
+  uint64_t xh = uint64_t(n >> 64);
+  bool e = (__uint128_t(xl) + __uint128_t(xl << 32)) > UINT64_MAX; // overflow
   uint64_t a = xl + (xl << 32);
   uint64_t b = a - (a >> 32) - e;
-  bool c = (int64_t(xh) - int64_t(b)) < 0;
+  bool c = xh < b;
   uint64_t r = xh - b;
   uint64_t mont_result = r - (uint32_t(0) - uint32_t(c));
+  // std::cout << "xl = " << xl << ", xh = " << xh << ", a = " << a << ", e = " << e << ", b = " <<
+  // b
+  //           << ", c = " << c << ", r = " << r << ", mont_result = " << mont_result << std::endl;
   return mont_result;
 }
 
