@@ -70,10 +70,10 @@ struct ShaDescriptor {
 
 struct MulDescriptor {
   // Address of first byte of MUL data to process
-  // 64 bits for first operand and 64 bits for second
+  // 128 bits for first operand and 128 bits for second
   uint32_t source;
 
-  // 64 bit result
+  // 128 bit result
   uint32_t result;
 };
 

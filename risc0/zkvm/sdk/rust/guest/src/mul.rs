@@ -17,12 +17,15 @@ unsafe impl Sync for CurOutput {}
 static CUR_OUTPUT: CurOutput = CurOutput(UnsafeCell::new(0));
 
 /// Result of multiply goldilocks
-pub struct MulGoldilocks([u32; 2]);
+pub struct MulGoldilocks([u32; 4]);
 
 impl MulGoldilocks {
     /// Get the result as u64
-    pub fn get_u64(&self) -> u64 {
-        (self.0[1] as u64) | ((self.0[0] as u64) << 32)
+    pub fn get_u64(&self) -> [u64; 2] {
+        [
+            (self.0[1] as u64) | ((self.0[0] as u64) << 32),
+            (self.0[3] as u64) | ((self.0[2] as u64) << 32),
+        ]
     }
 }
 
@@ -37,14 +40,18 @@ fn alloc_output() -> *mut MulDescriptor {
 }
 
 /// Multiply goldilocks oracle, verification is done separately
-pub fn mul_goldilocks(a: &u64, b: &u64) -> &'static MulGoldilocks {
-    let a_hi = ((a & 0xFFFFFFFF00000000) >> 32) as u32;
-    let a_lo = (a & 0xFFFFFFFF) as u32;
+pub fn mul_goldilocks(a: &[u64; 2], b: &[u64; 2]) -> &'static MulGoldilocks {
+    let a0_hi = ((a[0] & 0xFFFFFFFF00000000) >> 32) as u32;
+    let a0_lo = (a[0] & 0xFFFFFFFF) as u32;
+    let a1_hi = ((a[1] & 0xFFFFFFFF00000000) >> 32) as u32;
+    let a1_lo = (a[1] & 0xFFFFFFFF) as u32;
 
-    let b_hi = ((b & 0xFFFFFFFF00000000) >> 32) as u32;
-    let b_lo = (b & 0xFFFFFFFF) as u32;
+    let b0_hi = ((b[0] & 0xFFFFFFFF00000000) >> 32) as u32;
+    let b0_lo = (b[0] & 0xFFFFFFFF) as u32;
+    let b1_hi = ((b[1] & 0xFFFFFFFF00000000) >> 32) as u32;
+    let b1_lo = (b[1] & 0xFFFFFFFF) as u32;
 
-    let buf = [a_hi, a_lo, b_hi, b_lo];
+    let buf = [a0_hi, a0_lo, a1_hi, a1_lo, b0_hi, b0_lo, b1_hi, b1_lo];
 
     unsafe {
         let alloced = Box::<mem::MaybeUninit<MulGoldilocks>>::new(
