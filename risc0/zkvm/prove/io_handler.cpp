@@ -35,10 +35,12 @@ namespace risc0
   private:
     static DEVSPEC constexpr uint64_t add(uint64_t a, uint64_t b)
     {
-      bool c1 = b > M;
+      bool c1 = (M - b) > a;
       uint64_t x1 = a - (M - b);
-      uint32_t adj = 0 - uint32_t(c1);
-      return x1 - uint64_t(adj);
+      uint32_t adj = uint32_t(0) - uint32_t(c1);
+      uint64_t res = x1 - uint64_t(adj);
+      // std::cout << "c1: " << c1 << ", x1: " << x1 << ", adj: " << adj << ", res: " << res << std::endl;
+      return res;
     }
 
     static DEVSPEC constexpr uint64_t sub(uint64_t a, uint64_t b)
@@ -67,11 +69,6 @@ namespace risc0
       bool c = xh < b;
       uint64_t r = xh - b;
       uint64_t mont_result = r - (uint32_t(0) - uint32_t(c));
-      // std::cout << "xl = " << xl << ", xh = " << xh << ", a = " << a << ", e = " << e << ", b = "
-      // <<
-      // b
-      //           << ", c = " << c << ", r = " << r << ", mont_result = " << mont_result <<
-      //           std::endl;
       return mont_result;
     }
 
@@ -92,9 +89,19 @@ namespace risc0
   static std::pair<FpG, FpG> extensionMul(std::pair<FpG, FpG> a, std::pair<FpG, FpG> b)
   {
     FpG a0b0 = a.first * b.first;
+    FpG a1b1 = a.second * b.second;
+    FpG first = a0b0 - a1b1.doubleVal();
 
-    FpG first = a0b0 - (a.second * b.second).doubleVal();
-    FpG second = (a.first + a.second) * (b.first + b.second) - a0b0;
+    FpG a0a1 = a.first + a.second;
+    FpG b0b1 = b.first + b.second;
+    FpG second = a0a1 * b0b1 - a0b0;
+
+    // std::cout << "CPP a: [" << a.first.val << ", " << a.second.val << "]" << std::endl;
+    // std::cout << "b: [" << b.first.val << ", " << b.second.val << "]" << std::endl;
+
+    // std::cout << "a0b0: " << a0b0.val << ", a1b1: " << a1b1.val << ", first: " << first.val
+    //           << ", a0a1: " << a0a1.val << ", b0b1: " << b0b1.val << ", second: "
+    //           << second.val << std::endl;
 
     return std::pair(first, second);
   }
@@ -137,13 +144,13 @@ namespace risc0
     uint32_t a1_lo = mem.load(desc.source + 12);
     LOG(1, "Input[" << hex(3, 2) << "]: " << hex(desc.source + 12) << " -> " << hex(a1_lo));
 
-    uint32_t b0_hi = mem.load(desc.source);
+    uint32_t b0_hi = mem.load(desc.source + 16);
     LOG(1, "Input[" << hex(4, 2) << "]: " << hex(desc.source + 16) << " -> " << hex(b0_hi));
-    uint32_t b0_lo = mem.load(desc.source + 4);
+    uint32_t b0_lo = mem.load(desc.source + 20);
     LOG(1, "Input[" << hex(5, 2) << "]: " << hex(desc.source + 20) << " -> " << hex(b0_lo));
-    uint32_t b1_hi = mem.load(desc.source + 8);
+    uint32_t b1_hi = mem.load(desc.source + 24);
     LOG(1, "Input[" << hex(6, 2) << "]: " << hex(desc.source + 24) << " -> " << hex(b1_hi));
-    uint32_t b1_lo = mem.load(desc.source + 12);
+    uint32_t b1_lo = mem.load(desc.source + 28);
     LOG(1, "Input[" << hex(7, 2) << "]: " << hex(desc.source + 28) << " -> " << hex(b1_lo));
 
     uint64_t a0 = a0_lo | (uint64_t(a0_hi) << 32);
